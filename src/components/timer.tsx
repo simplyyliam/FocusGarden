@@ -39,7 +39,7 @@ export default function TimerContainer() {
     };
   }, [pause, resume, paused]);
   return (
-    <div className="flex flex-col items-center justify-center text-9xl">
+    <div className="flex flex-col items-center justify-center text-9xl text-white font-semibold">
       {formatted}
     </div>
   );
