@@ -1,12 +1,13 @@
-import { BottomBar, Nav, TimerContainer } from "./components";
+import { BottomBar, Nav, TimerContainer, TodoWidget } from "./components";
 
 function App() {
   return (
-    <div className="background w-screen h-screen">
-      <div className="flex flex-col items-center justify-center w-full h-full bg-black/15 backdrop-blur-[2.5px] p-2.5">
+    <div className="w-screen h-screen bg-neutral-200">
+      <div className="flex flex-col items-center justify-center w-full h-full p-2.5">
         <Nav />
-        <div className="flex items-center justify-center w-full h-full">
+        <div className="flex items-center justify-center w-full h-full relative">
           <TimerContainer />
+          <TodoWidget/>
         </div>
         <BottomBar />
       </div>
