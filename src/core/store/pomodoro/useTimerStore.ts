@@ -6,18 +6,11 @@ type TimerStore = {
     tick: () => void
 }
 
-export const useTimer = create<TimerStore & {format: () => string}> ((set, get) => ({
-    timer: 5,
+export const useTimer = create<TimerStore>((set) => ({
+    timer: 50,
     tick: () => {
-        const { timer } = get()
-        if(timer > 0) {
-            set({timer: timer - 1})
-        }
-     },
-     format: () => {
-        const {timer} = get()
-        const mins = Math.floor(timer / 60)
-        const secs = timer % 60
-        return `${mins}:${secs.toString().padStart(2, "0")}`
-     }
+        set((s) => ({
+            timer: s.timer > 0 ? s.timer - 1 : 0
+        }))
+    }
 }))
