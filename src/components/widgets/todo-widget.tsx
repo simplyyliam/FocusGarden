@@ -8,8 +8,31 @@ import {
 import { Checkbox } from "../ui/checkbox";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon } from "@hugeicons/core-free-icons";
+import { useState, type FormEvent } from "react";
+
+type Todo = { id: number; text: string };
 
 export default function TodoWidget() {
+  const [showInput, setShowInput] = useState(false);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [input, setInput] = useState("");
+
+  function addTodo(e: FormEvent) {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    setTodos([...todos, { id: Date.now(), text: input }]);
+    setInput("");
+    setShowInput(false);
+  }
+
+  function deleteTodo(id: number) {
+    setTodos((prev) => prev.filter((todo) => todo.id !== id));
+  }
+
+  function handleShowInput() {
+    setShowInput((prev) => !prev);
+  }
 
   return (
     <Card className="absolute left-0 top-5 w-full max-w-sm bg-white border-none shadow-none rounded-[30px]">
@@ -17,20 +40,43 @@ export default function TodoWidget() {
         <CardTitle>Tasks</CardTitle>
         <CardAction>
           <button
+            onClick={handleShowInput}
             className="flex items-center justify-center w-8.75 h-8.75 rounded-[10px] bg-[#F7F7F7]"
           >
             <HugeiconsIcon icon={Add01Icon} />
           </button>
         </CardAction>
       </CardHeader>
-      <CardContent>
-        <div className="flex p-2.5 w-full h-fit">
-          <div className="flex items-center gap-2.5">
-            <Checkbox id="todo" />
-            <label htmlFor="todo">Placehold todo</label>
-          </div>
+      {todos.length === 0 && !showInput ? (
+        <div className="flex items-center justify-center w-full h-full text-muted-foreground p-2.5">
+          Add a todo
         </div>
-      </CardContent>
+      ) : (
+        <CardContent>
+          {todos.map((t) => (
+            <div key={t.id} className="flex p-2.5 w-full h-fit">
+              <div className="flex items-center gap-2.5">
+                <Checkbox
+                  id={t.id.toString()}
+                  onClick={() => deleteTodo(t.id)}
+                />
+                <label htmlFor={t.id.toString()}>{t.text}</label>
+              </div>
+            </div>
+          ))}
+          {showInput && (
+            <form onSubmit={addTodo} className="flex p-2.5 w-full h-fit">
+              <input
+                className="w-full p-2.5"
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Todo..."
+              />
+            </form>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }
