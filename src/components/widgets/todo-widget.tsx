@@ -14,7 +14,7 @@ import { useState, type FormEvent } from "react";
 
 import { AnimatePresence, motion } from "motion/react";
 
-type Todo = { id: number; text: string };
+type Todo = { id: number; text: string; completed: boolean };
 
 export default function TodoWidget() {
   const [showInput, setShowInput] = useState(false);
@@ -25,14 +25,15 @@ export default function TodoWidget() {
     e.preventDefault();
     if (!input.trim()) return;
 
-    setTodos([...todos, { id: Date.now(), text: input }]);
+    setTodos([...todos, { id: Date.now(), text: input, completed: false }]);
     setInput("");
     setShowInput(false);
   }
 
-  function deleteTodo(id: number) {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
-  }
+  // function deleteTodo(id: number) {
+  //   setTodos((prev) => prev.filter((todo) => todo.id !== id));
+  // }
+
 
   return (
     <Card className="absolute left-0 top-5 w-full max-w-sm bg-white border-none shadow-none rounded-[30px]">
@@ -69,14 +70,29 @@ export default function TodoWidget() {
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                key="list"
+                key={t.id}
                 className="flex items-center gap-2.5"
               >
                 <Checkbox
                   id={t.id.toString()}
-                  onClick={() => deleteTodo(t.id)}
+                  checked={t.completed}
+                  onCheckedChange={(checked) =>
+                    setTodos((prev) =>
+                      prev.map((todo) =>
+                        todo.id === t.id
+                          ? { ...todo, completed: checked as boolean }
+                          : todo
+                      )
+                      
+                    )
+                  }
                 />
-                <label htmlFor={t.id.toString()}>{t.text}</label>
+                <label
+                  htmlFor={t.id.toString()}
+                  className={`${t.completed ? "line-through text-muted-foreground" : ""}`}
+                >
+                  {t.text}
+                </label>
               </motion.div>
             </div>
           ))}
