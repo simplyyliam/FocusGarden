@@ -76,11 +76,11 @@ export default function TodoWidget() {
                 <Checkbox
                   id={t.id.toString()}
                   checked={t.completed}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={() =>
                     setTodos((prev) =>
                       prev.map((todo) =>
                         todo.id === t.id
-                          ? { ...todo, completed: checked as boolean }
+                          ? { ...todo, completed: !t.completed }
                           : todo
                       )
                       
