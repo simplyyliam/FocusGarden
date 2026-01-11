@@ -3,17 +3,17 @@ import { Authentication, HomePage, Layout } from "./pages"
 
 
 export const Router = createBrowserRouter([
-    {
-        element: <Layout/>,
-        children: [
-            {
-                index: true,
-                element: <HomePage/>
-            },
-            {
-                path: "signin",
-                element: <Authentication/>
-            },
-        ]
- }
-])
+  {
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: "signin",
+        element: <Authentication />,
+      },
+    ],
+  },
+]);
