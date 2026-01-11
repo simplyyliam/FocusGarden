@@ -1,10 +1,19 @@
 import { createBrowserRouter } from "react-router-dom"
-import { HomePage } from "./pages"
+import { Authentication, HomePage, Layout } from "./pages"
 
 
 export const Router = createBrowserRouter([
     {
-        path: "/",
-        element: <HomePage/>,
+        element: <Layout/>,
+        children: [
+            {
+                index: true,
+                element: <HomePage/>
+            },
+            {
+                path: "signin",
+                element: <Authentication/>
+            },
+        ]
  }
 ])

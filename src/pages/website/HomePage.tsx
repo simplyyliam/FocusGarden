@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
 export default function HomePage() {
   return (
@@ -29,14 +29,15 @@ export default function HomePage() {
             solo. whatever floats your boat. Less noise. More deep work.
           </p>
         </div>
-        <Link to={""}>
+        <Link to="signin">
           <Button className="rounded-full cursor-pointer px-9.25 py-3.5 h-fit">
             Sign in
           </Button>
         </Link>
       </div>
       {/* hero image/video */}
-      <div className="w-[60em] h-[40em] bg-neutral-100"></div>
+      <div className="lg:w-[60em] lg:h-[40em] w-full h-90 bg-neutral-100 bg-[url('/bg-1.png')] bg-cover"></div>
+      <Outlet/>
     </div>
   );
 }
