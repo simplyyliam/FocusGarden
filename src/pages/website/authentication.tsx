@@ -2,9 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "./components";
 import { motion } from "motion/react";
 import { useAuth } from "@/hooks";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function Authentication() {
-  const { signInWithGoogle } = useAuth()
+  const { signInWithGoogle, session, loading } = useAuth();
+
+    const navigate = useNavigate()
+
+
+  useEffect(() => {
+    if (!loading && session) {
+      navigate("/sessio")
+    }
+  }, [session, navigate, loading])
   return (
     <div className="flex items-center justify-center w-screen h-screen bg-[url('/bg-1.png')] bg-cover">
       <div className="flex flex-col items-center justify-between lg:h-70 h-60">
@@ -20,7 +31,10 @@ export default function Authentication() {
           </div>
         </div>
         <motion.button whileTap={{ scale: 0.95 }}>
-          <Button onClick={signInWithGoogle} className="bg-white text-foreground w-52 h-15 rounded-full hover:bg-neutral-100 cursor-pointer">
+          <Button
+            onClick={signInWithGoogle}
+            className="bg-white text-foreground w-52 h-15 rounded-full hover:bg-neutral-100 cursor-pointer"
+          >
             <span>
               <svg
                 width="24"

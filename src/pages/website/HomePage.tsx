@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link, Outlet } from "react-router-dom";
 
 export default function HomePage() {
+
   return (
     <div className="flex flex-col items-center justify-between w-screen min-h-screen p-2.5 gap-22.5 overflow-y-auto">
       {/* Nav */}
@@ -13,7 +14,7 @@ export default function HomePage() {
             className="p-2 text-sm lg:px-3.75 lg:py-2.5 bg-accent rounded-xl"
             to={""}
           >
-            Try Now
+            Sign in
           </Link>
         </div>
       </nav>
@@ -31,7 +32,7 @@ export default function HomePage() {
         </div>
         <Link to="signin">
           <Button className="rounded-full cursor-pointer px-9.25 py-3.5 h-fit">
-            Sign in
+            Try Now
           </Button>
         </Link>
       </div>
@@ -41,3 +42,4 @@ export default function HomePage() {
     </div>
   );
 }
+

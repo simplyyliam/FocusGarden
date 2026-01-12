@@ -1,5 +1,5 @@
 import { createBrowserRouter } from "react-router-dom"
-import { Authentication, HomePage, Layout } from "./pages"
+import { Authentication, HomePage, Layout, Sessio } from "./pages"
 
 
 export const Router = createBrowserRouter([
@@ -16,4 +16,9 @@ export const Router = createBrowserRouter([
       },
     ],
   },
+
+  {
+    path: "sessio",
+    element: <Sessio/>
+  }
 ]);
