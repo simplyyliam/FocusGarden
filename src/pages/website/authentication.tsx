@@ -1,21 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Logo } from "./components";
 import { motion } from "motion/react";
-import { useAuth } from "@/hooks";
+import { supabase } from "@/lib";
+import { useAuth } from "@/auth";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
 export default function Authentication() {
-  const { signInWithGoogle, session, loading } = useAuth();
+  const { session, isLoading } = useAuth();
 
-    const navigate = useNavigate()
+  const navigate = useNavigate();
 
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/sessio`,
+      },
+    });
+  };
 
   useEffect(() => {
-    if (!loading && session) {
-      navigate("/sessio")
+    if (!isLoading && session) {
+      navigate("/sessio");
     }
-  }, [session, navigate, loading])
+  }, [session, navigate, isLoading]);
   return (
     <div className="flex items-center justify-center w-screen h-screen bg-[url('/bg-1.png')] bg-cover">
       <div className="flex flex-col items-center justify-between lg:h-70 h-60">

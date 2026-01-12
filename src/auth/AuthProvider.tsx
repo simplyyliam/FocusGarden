@@ -9,21 +9,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setIsLoading(false);
-    });
+    let mounted = true;
 
-    const { data: listiner } = supabase.auth.onAuthStateChange(
-      (_e, session) => {
+    (async () => {
+      // initial session + server-side user verification
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session ?? null;
+
+      if (!session) {
+        if (!mounted) return;
+        setSession(null);
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+
+      if (userErr || !userData?.user) {
+        // server reports no user (deleted/invalid) — clear local session
+        await supabase.auth.signOut();
+        if (!mounted) return;
+        setSession(null);
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!mounted) return;
+      setSession(session);
+      setUser(userData.user);
+      setIsLoading(false);
+    })();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+        setSession(null);
+        setUser(null);
+      } else {
         setSession(session);
         setUser(session?.user ?? null);
       }
-    );
+    });
 
     return () => {
-      listiner.subscription.unsubscribe();
+      listener.subscription.unsubscribe();
+      mounted = false;
     };
   }, []);
 

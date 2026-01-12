@@ -1,6 +1,6 @@
-import { createBrowserRouter } from "react-router-dom"
-import { Authentication, HomePage, Layout, Sessio } from "./pages"
-import { ProtectedRoute } from "./routes"
+import { createBrowserRouter } from "react-router-dom";
+import { Authentication, HomePage, Layout, Sessio } from "./pages";
+import { ProtectedRoute, PublicRoute } from "./routes";
 
 export const Router = createBrowserRouter([
   {
@@ -12,7 +12,11 @@ export const Router = createBrowserRouter([
       },
       {
         path: "signin",
-        element: <Authentication />,
+        element: (
+          <PublicRoute>
+            <Authentication />
+          </PublicRoute>
+        ),
       },
       {
         path: "sessio",
@@ -24,4 +28,4 @@ export const Router = createBrowserRouter([
       },
     ],
   },
-])
+]);
