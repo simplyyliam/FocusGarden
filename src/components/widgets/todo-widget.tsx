@@ -26,15 +26,29 @@ export default function TodoWidget() {
   const [showInput, setShowInput] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState("");
+  const [newlyAddedId, setNewlyAddedId] = useState<number | null>(null);
+  const [pendingTodo, setPendingTodo] = useState<Todo | null>(null);
 
   const todoRef = useRef<HTMLButtonElement | null>(null);
+
   function addTodo(e: FormEvent) {
     e.preventDefault();
     if (!input.trim()) return;
 
-    setTodos([...todos, { id: Date.now(), text: input, completed: false }]);
+    const newId = Date.now();
+    // Store the todo temporarily, don't add it yet
+    setPendingTodo({ id: newId, text: input, completed: false });
+    setNewlyAddedId(newId);
     setInput("");
-    setShowInput(false);
+    setShowInput(false); // This triggers the input exit animation
+  }
+
+  function handleInputExitComplete() {
+    // After input exits, add the pending todo
+    if (pendingTodo) {
+      setTodos((prev) => [...prev, pendingTodo]);
+      setPendingTodo(null);
+    }
   }
 
   function deleteTodo(id: number) {
@@ -57,9 +71,63 @@ export default function TodoWidget() {
           </CardAction>
         </CardHeader>
 
-        <CardContent>
-          <AnimatePresence mode="wait">
-            {todos.length === 0 && !showInput && (
+        <CardContent className="flex flex-col gap-2">
+          <AnimatePresence>
+            {todos.map((t) => {
+              const isNew = t.id === newlyAddedId;
+              return (
+                <ContextMenu key={t.id}>
+                  <ContextMenuTrigger asChild>
+                    <button
+                      ref={todoRef}
+                      key={t.id}
+                      className={`flex p-2.5 w-full cursor-pointer rounded-xl hover:bg-accent transition-colors ${
+                        t.completed
+                          ? "bg-blue-200 hover:bg-blue-300 text-blue-400 line-through"
+                          : ""
+                      }`}
+                    >
+                      <motion.div
+                        initial={isNew ? { opacity: 0, scale: 0 } : false}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        onAnimationComplete={() => {
+                          if (isNew) setNewlyAddedId(null);
+                        }}
+                        key={t.id}
+                        className="flex items-center gap-2.5"
+                      >
+                        <Checkbox
+                          id={t.id.toString()}
+                          checked={t.completed}
+                          onCheckedChange={() =>
+                            setTodos((prev) =>
+                              prev.map((todo) =>
+                                todo.id === t.id
+                                  ? { ...todo, completed: !t.completed }
+                                  : todo
+                              )
+                            )
+                          }
+                        />
+                        <label htmlFor={t.id.toString()}>{t.text}</label>
+                      </motion.div>
+                    </button>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem onClick={() => deleteTodo(t.id)}>
+                      Delete
+                    </ContextMenuItem>
+                    <ContextMenuItem>Billing</ContextMenuItem>
+                    <ContextMenuItem>Team</ContextMenuItem>
+                    <ContextMenuItem>Subscription</ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+              );
+            })}
+          </AnimatePresence>
+          <AnimatePresence mode="wait" onExitComplete={handleInputExitComplete}>
+            {todos.length === 0 && !showInput && !pendingTodo && (
               <motion.div
                 key="empty"
                 initial={{ opacity: 0 }}
@@ -70,56 +138,6 @@ export default function TodoWidget() {
                 Add a todo
               </motion.div>
             )}
-
-            {todos.map((t) => (
-              <ContextMenu key={t.id}>
-                <ContextMenuTrigger asChild>
-                  <button
-                    ref={todoRef}
-                    key={t.id}
-                    className="flex p-2.5 w-full cursor-pointer rounded-xl hover:bg-accent transition-colors ease-linear "
-                  >
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      key={t.id}
-                      className="flex items-center gap-2.5"
-                    >
-                      <Checkbox
-                        id={t.id.toString()}
-                        checked={t.completed}
-                        onCheckedChange={() =>
-                          setTodos((prev) =>
-                            prev.map((todo) =>
-                              todo.id === t.id
-                                ? { ...todo, completed: !t.completed }
-                                : todo
-                            )
-                          )
-                        }
-                      />
-                      <label
-                        htmlFor={t.id.toString()}
-                        className={`${
-                          t.completed
-                            ? "line-through text-muted-foreground"
-                            : ""
-                        }`}
-                      >
-                        {t.text}
-                      </label>
-                    </motion.div>
-                  </button>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                  <ContextMenuItem onClick={() => deleteTodo(t.id)}>Delete</ContextMenuItem>
-                  <ContextMenuItem>Billing</ContextMenuItem>
-                  <ContextMenuItem>Team</ContextMenuItem>
-                  <ContextMenuItem>Subscription</ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            ))}
 
             {showInput && (
               <motion.div
