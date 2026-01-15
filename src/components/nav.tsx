@@ -22,7 +22,7 @@ export default function Nav() {
           );
           // console.log(user.user_metadata)
           const avatarUrl =
-            user.user_metadata?.avatar_url || "No avatar was found";
+            user.user_metadata?.avatar_url;
           setAvatar(avatarUrl);
           // console.log("Avatar Image:", avatarUrl)
           return user;
