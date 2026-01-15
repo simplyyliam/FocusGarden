@@ -1,4 +1,5 @@
-import { useUser } from "@/core/store";
+
+import { useUser } from "@/core";
 import UserProfile from "../UserProfile";
 
 export default function MembersContainer() {

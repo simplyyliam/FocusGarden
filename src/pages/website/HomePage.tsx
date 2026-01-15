@@ -9,7 +9,7 @@ export default function HomePage() {
   
   useEffect(() => {
     if (!isLoading && session) {
-      navigate("/sessio");
+      navigate("/rooms");
     }
   }, [session, navigate, isLoading]);
   return (

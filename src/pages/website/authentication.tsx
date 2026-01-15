@@ -15,14 +15,14 @@ export default function Authentication() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/sessio`,
+        redirectTo: `${window.location.origin}/rooms`,
       },
     });
   };
 
   useEffect(() => {
     if (!isLoading && session) {
-      navigate("/sessio");
+      navigate("/rooms");
     }
   }, [session, navigate, isLoading]);
   return (
