@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 interface Props {
   src: string
   className?: string
-  onClick: () => void
+  onClick?: () => void
 }
 
 

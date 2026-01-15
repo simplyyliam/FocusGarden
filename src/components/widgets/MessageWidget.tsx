@@ -45,6 +45,7 @@ export const MessageWidget = () => {
   }, [isDragging]);
 
   const { session } = useAuth();
+  
   useEffect(() => {
     if (!session) return;
 
@@ -68,11 +69,6 @@ export const MessageWidget = () => {
     });
 
     channelRef.current = roomOne;
-
-    // roomOne.on("presence", { event: "sync" }, () => {
-    //   const state = roomOne.presenceState()
-    //   setMembers(Object.keys(state))
-    // })
 
     return () => {
       roomOne.unsubscribe();
