@@ -5,10 +5,24 @@ import { useState, useRef, useEffect } from "react";
 export const MessageWidget = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
 
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return; // Disable dragging on mobile
     setIsDragging(true);
     offsetRef.current = {
       x: e.clientX - position.x,
@@ -42,22 +56,79 @@ export const MessageWidget = () => {
   const { session } = useAuth();
   const [value, setValue] = useState("");
 
+  // Mobile: Show toggle button when closed
+  if (isMobile && !isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-4 right-4 z-50 bg-accent text-white p-4 rounded-full shadow-lg"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      </button>
+    );
+  }
+
   return (
     <div
       ref={dragRef}
-      style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
-      className="flex flex-col bg-white w-220 h-150 rounded-3xl absolute right-0 bottom-0 overflow-hidden"
+      style={
+        isMobile
+          ? {} // Fixed positioning handled by CSS
+          : { transform: `translate(${position.x}px, ${position.y}px)` }
+      }
+      className={`
+        flex flex-col bg-white rounded-3xl overflow-hidden shadow-xl
+        ${isMobile
+          ? "fixed inset-x-2 bottom-2 top-auto h-[60vh] z-50"
+          : "w-220 h-150 absolute right-0 bottom-0"
+        }
+      `}
     >
-      {/* Drag Handle */}
+      {/* Drag Handle / Header */}
       <div
         onMouseDown={handleMouseDown}
-        className={`flex items-center bg-accent w-full h-10 rounded-t-3xl ${
-          isDragging ? "cursor-grabbing" : "cursor-grab"
+        className={`flex items-center justify-between bg-accent w-full h-10 px-4 rounded-t-3xl ${
+          isMobile ? "" : isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
-      />
+      >
+        <span className="text-white text-sm font-medium">Chat</span>
+        {isMobile && (
+          <button
+            onClick={() => setIsOpen(false)}
+            className="text-white"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       {/* Messages */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-4 overflow-y-auto space-y-2">
         {messages.map((m, i) => (
           <div
             key={i}
@@ -67,7 +138,13 @@ export const MessageWidget = () => {
                 : "justify-start"
             }`}
           >
-            <p className="max-w-[75%] rounded-xl px-3 py-2 bg-black/5">
+            <p
+              className={`max-w-[75%] rounded-xl px-3 py-2 ${
+                m.user === session?.user.email
+                  ? "bg-accent"
+                  : "bg-black/5"
+              }`}
+            >
               {m.text}
             </p>
           </div>
@@ -75,7 +152,7 @@ export const MessageWidget = () => {
       </div>
 
       {/* Input */}
-      <div className="p-4">
+      <div className="p-4 border-t border-black/5">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -84,14 +161,21 @@ export const MessageWidget = () => {
             sendMessage(value, session.user.email!);
             setValue("");
           }}
+          className="flex gap-2"
         >
           <input
-            className="h-10 w-full outline-none bg-transparent"
+            className="flex-1 h-10 px-3 outline-none bg-black/5 rounded-xl"
             type="text"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Chat with members"
           />
+          <button
+            type="submit"
+            className="h-10 px-4 bg-accent text-white rounded-xl"
+          >
+            Send
+          </button>
         </form>
       </div>
     </div>
