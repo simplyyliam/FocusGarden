@@ -1,5 +1,4 @@
 import { supabase } from "@/lib";
-import { useEffect } from "react";
 import { create } from "zustand";
 
 type GetUserStore = {

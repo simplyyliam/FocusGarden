@@ -2,12 +2,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 interface Props {
   src: string
+  className?: string
 }
 
 
-export const UserProfile = ({src}: Props) => {
+export const UserProfile = ({src, className}: Props) => {
   return (
-    <Avatar>
+    <Avatar className={`${className}`}>
       <AvatarImage src={src} />
       <AvatarFallback>CN</AvatarFallback>
     </Avatar>

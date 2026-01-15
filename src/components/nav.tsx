@@ -1,15 +1,11 @@
-import { useEffect } from "react";
+
 import { BarContainer } from "./shared";
 import UserAvatar from "./UserProfile";
 import { useUser } from "@/core/store";
 
 export default function Nav() {
-  const { avatar, username, setAvatar, setUsername } = useUser()
+  const { avatar, username } = useUser()
 
-  useEffect(() => {
-    setAvatar()
-    setUsername()
-  }, [setAvatar, setUsername])
 
   return (
     <BarContainer>
