@@ -2,12 +2,24 @@ import { JoinRoom as JoinRoomRealtime } from "@/core/realtime/JoinRoom";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { create } from "zustand";
 
+type Message = {
+    id: string
+    text: string
+    user: string
+    createdAt: number
+}
+
+type PresenceUser = {
+    id: string
+    email?: string
+    avatar?: string
+}
 
 type RoomStore = {
     roomId: string | null
     channel: RealtimeChannel | null
-    messages: any[]
-    presenceUsers: any[]
+    messages: Message[]
+    presenceUsers: PresenceUser[]
 
     joinRoom: (args: {
         roomId: string
@@ -18,13 +30,13 @@ type RoomStore = {
         }
     }) => Promise<void>
 
-    sendMessage: (text: string, user: string) => void
+    leaveRoom: () => void
 
+    sendMessage: (text: string, user: string) => void
 }
 
-
 export const useRoomStore = create<RoomStore>((set, get) => ({
-    roomId: null,
+    roomId: localStorage.getItem("roomId"),
     channel: null,
     messages: [],
     presenceUsers: [],
@@ -33,11 +45,18 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
         const channel = await JoinRoomRealtime({
             roomId,
             user,
-            onMessage: (msg) => set((s) => ({
-                messages: [...s.messages, msg],
-            })),
+            onMessage: (msg) => set((s) => {
+                // Prevent duplicates by checking message ID
+                if (s.messages.some((m) => m.id === msg.id)) {
+                    return s;
+                }
+                return {
+                    messages: [...s.messages, msg as Message],
+                };
+            }),
             onPresence: (users) => set({ presenceUsers: users }),
         })
+        localStorage.setItem("roomId", roomId)
         set({
             roomId,
             channel,
@@ -45,27 +64,32 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
             presenceUsers: [],
         })
     },
+
+    leaveRoom: () => {
+        localStorage.removeItem("roomId")
+        set({
+            roomId: null,
+            channel: null,
+            messages: [],
+            presenceUsers: [],
+        })
+    },
+
     sendMessage: (text, user) => {
         const channel = get().channel;
         if (!channel) return;
 
-        const message = {
+        const message: Message = {
+            id: crypto.randomUUID(),
             text,
             user,
             createdAt: Date.now(),
         };
 
-
-        set((state) => ({
-            messages: [...state.messages, message],
-        }));
-
-        // Broadcast for others
         channel.send({
             type: "broadcast",
             event: "message",
             payload: message,
         });
     },
-
 }))

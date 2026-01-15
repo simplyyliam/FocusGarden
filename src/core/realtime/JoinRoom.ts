@@ -4,6 +4,18 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 
 let activeChannel: RealtimeChannel | null = null
 
+type PresenceUser = {
+    id: string;
+    email?: string;
+    avatar?: string;
+    joined_at: string;
+}
+
+type BroadcastMessage = {
+    id: string;
+    [key: string]: unknown;
+}
+
 type JoinRoomArgs = {
     roomId: string;
     user: {
@@ -11,8 +23,8 @@ type JoinRoomArgs = {
         email?: string
         avatar?: string
     }
-    onMessage?: (message: any) => void
-    onPresence?: (users: any[]) => void
+    onMessage?: (message: BroadcastMessage) => void
+    onPresence?: (users: PresenceUser[]) => void
 }
 
 export async function JoinRoom({
@@ -29,6 +41,9 @@ export async function JoinRoom({
 
     const channel = supabase.channel(`room:${roomId}`, {
         config: {
+            broadcast: {
+                self: true,  // Sender receives their own messages
+            },
             presence: {
                 key: user.id
             }
@@ -44,7 +59,7 @@ export async function JoinRoom({
     if(onPresence) {
         channel.on("presence", { event: "sync" }, () => {
             const state = channel.presenceState()
-            const users = Object.keys(state).flat()
+            const users = Object.values(state).flat() as unknown as PresenceUser[]
             onPresence(users)
         })
     }

@@ -11,12 +11,13 @@ export default function RoomSwitcher() {
   const navigate = useNavigate();
 
   const handleJoinRoom = async (room: string) => {
+    if(!session) return
     await joinRoom({
       roomId: room,
       user: {
-        id: session!.user.id,
-        email: session!.user.email,
-        avatar: session!.user.user_metadata.avatar_url,
+        id: session.user.id,
+        email: session.user.email,
+        avatar: session.user.user_metadata.avatar_url,
       },
     });
     navigate("/sessio");
