@@ -1,5 +1,5 @@
 import { Nav, TimerContainer, TodoWidget, BottomBar, MessageWidget } from "@/components";
-import { useUser } from "@/core/store";
+import { useUser } from "@/core";
 import { useEffect } from "react";
 
 export default function Sessio() {

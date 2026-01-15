@@ -2,7 +2,8 @@
 import { useAuth } from "@/auth";
 import { BarContainer } from "./shared";
 import UserAvatar from "./UserProfile";
-import { useUser } from "@/core/store";
+import { useUser } from "@/core";
+
 
 export default function Nav() {
   const { avatar, username } = useUser()

@@ -1,5 +1,5 @@
+import { useTimer } from "@/core";
 import { useEffect } from "react";
-import { useTimer } from "../core/store";
 
 export default function TimerContainer() {
   const tick = useTimer((s) => s.tick);
