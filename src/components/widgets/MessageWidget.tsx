@@ -1,16 +1,18 @@
+
 import { useAuth } from "@/auth";
-import { supabase } from "@/lib";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useState, useRef, useEffect, type FormEvent } from "react";
+import { useRoomStore } from "@/core";
+import { useState, useRef, useEffect } from "react";
 
 export const MessageWidget = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
-  const [messages, setMessages] = useState<{ message: string, user: string }[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const channelRef = useRef<RealtimeChannel | null>(null);
+
+
+  const { messages, sendMessage } = useRoomStore()
+  const { session } = useAuth()
+  const [value, setValue] = useState('')
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -44,54 +46,6 @@ export const MessageWidget = () => {
     };
   }, [isDragging]);
 
-  const { session } = useAuth();
-  
-  useEffect(() => {
-    if (!session) return;
-
-    const roomOne = supabase.channel("room-1", {
-      config: {
-        presence: {
-          key: session.user.id,
-        },
-      },
-    });
-    roomOne.on("broadcast", { event: "message" }, (payload) => {
-      setMessages((prev) => [...prev, {message: payload.payload.message, user: payload.payload.user}]);
-    });
-
-    roomOne.subscribe(async (status) => {
-      if (status === "SUBSCRIBED") {
-        await roomOne.track({
-          id: session.user.id,
-        });
-      }
-    });
-
-    channelRef.current = roomOne;
-
-    return () => {
-      roomOne.unsubscribe();
-      channelRef.current = null;
-    };
-  }, [session]);
-
-  const sendMessage = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!channelRef.current || !newMessage.trim()) return;
-
-    const messagePayload = { message: newMessage, user: session?.user.email || "Anonymous" };
-
-    // Add message to local state immediately
-    setMessages((prev) => [...prev, messagePayload]);
-
-    await channelRef.current.send({
-      type: "broadcast",
-      event: "message",
-      payload: messagePayload
-    });
-    setNewMessage("");
-  };
 
   return (
     <div
@@ -121,12 +75,16 @@ export const MessageWidget = () => {
         ))}
       </div>
       <div className="h-fit p-4">
-        <form onSubmit={sendMessage}>
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          sendMessage(value, session!.user.email!)
+          setValue("")
+        }}>
           <input
             className="h-10 w-full outline-none"
             type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
             placeholder="Chat with members"
           />
         </form>
