@@ -8,7 +8,7 @@ export const MessageWidget = () => {
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
-  const [messages, setMessages] = useState<{ message: string }[]>([]);
+  const [messages, setMessages] = useState<{ message: string, user: string }[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -56,7 +56,7 @@ export const MessageWidget = () => {
       },
     });
     roomOne.on("broadcast", { event: "message" }, (payload) => {
-      setMessages((prev) => [...prev, payload.payload]);
+      setMessages((prev) => [...prev, {message: payload.payload.message, user: payload.payload.user}]);
     });
 
     roomOne.subscribe(async (status) => {
@@ -84,7 +84,7 @@ export const MessageWidget = () => {
     e.preventDefault();
     if (!channelRef.current || !newMessage.trim()) return;
 
-    const messagePayload = { message: newMessage };
+    const messagePayload = { message: newMessage, user: session?.user.email || "Anonymous" };
 
     // Add message to local state immediately
     setMessages((prev) => [...prev, messagePayload]);
@@ -92,7 +92,7 @@ export const MessageWidget = () => {
     await channelRef.current.send({
       type: "broadcast",
       event: "message",
-      payload: messagePayload,
+      payload: messagePayload
     });
     setNewMessage("");
   };
@@ -115,9 +115,9 @@ export const MessageWidget = () => {
         {messages.map((m) => (
           <div
             className={`flex w-full h-fit ${
-              m.message === session?.user.email
-                ? "justify-start"
-                : "justify-end"
+              m.user === session?.user.email
+                ? "justify-end"
+                : "justify-start"
             }`}
           >
             <p>{m.message}</p>

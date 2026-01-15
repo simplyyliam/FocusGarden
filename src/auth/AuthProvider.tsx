@@ -42,15 +42,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     })();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
-        setSession(null);
-        setUser(null);
-      } else {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
       }
-    });
+    );
 
     return () => {
       listener.subscription.unsubscribe();
@@ -58,8 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, isLoading }}>
+    <AuthContext.Provider value={{ session, user, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

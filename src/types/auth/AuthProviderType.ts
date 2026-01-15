@@ -4,4 +4,5 @@ export type AuthProviderType = {
   session: Session | null;
   user: User | null;
   isLoading: boolean;
+  signOut: () => Promise<void>  
 };
