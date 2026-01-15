@@ -1,48 +1,21 @@
-import { supabase } from "@/lib";
+import { useEffect } from "react";
 import { BarContainer } from "./shared";
-import { useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import UserAvatar from "./UserProfile";
+import { useUser } from "@/core/store";
 
 export default function Nav() {
-  const [name, setName] = useState("");
-  const [avatar, setAvatar] = useState();
+  const { avatar, username, setAvatar, setUsername } = useUser()
 
   useEffect(() => {
-    async function getUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      try {
-        if (user) {
-          setName(
-            user.user_metadata?.full_name ||
-              user.user_metadata?.name ||
-              user.email ||
-              ""
-          );
-          // console.log(user.user_metadata)
-          const avatarUrl =
-            user.user_metadata?.avatar_url;
-          setAvatar(avatarUrl);
-          // console.log("Avatar Image:", avatarUrl)
-          return user;
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    getUser();
-  }, []);
+    setAvatar()
+    setUsername()
+  }, [setAvatar, setUsername])
 
   return (
     <BarContainer>
       <div className="flex items-center justify-center gap-3 text-white">
-        <Avatar>
-          <AvatarImage src={avatar} />
-          <AvatarFallback>CN</AvatarFallback>
-        </Avatar>
-        {name}
+      <UserAvatar src={avatar || ""}/>
+        {username}
       </div>
     </BarContainer>
   );
