@@ -1,8 +1,17 @@
+import { useAuth } from "@/auth";
 import { Button } from "@/components/ui/button";
-import { Link, Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 
 export default function HomePage() {
-
+  const { session, isLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (!isLoading && session) {
+      navigate("/sessio");
+    }
+  }, [session, navigate, isLoading]);
   return (
     <div className="flex flex-col items-center justify-between w-screen min-h-screen p-2.5 gap-22.5 overflow-y-auto">
       {/* Nav */}
@@ -38,8 +47,7 @@ export default function HomePage() {
       </div>
       {/* hero image/video */}
       <div className="lg:w-[60em] lg:h-[40em] w-full h-90 bg-neutral-100 bg-[url('/bg-1.png')] bg-cover"></div>
-      <Outlet/>
+      <Outlet />
     </div>
   );
 }
-
