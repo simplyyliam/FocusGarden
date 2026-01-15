@@ -1,9 +1,9 @@
 
-import { useUser } from "@/core";
+import { useRoomStore } from "@/core";
 import UserProfile from "../UserProfile";
 
 export default function MembersContainer() {
-  const { avatar } = useUser();
+  const members = useRoomStore((s) => s.presenceUsers)
 
   return (
 <div
@@ -18,10 +18,9 @@ export default function MembersContainer() {
     backdrop-blur-md
   "
 >
-  <UserProfile className="w-full h-full" src={avatar} />
-  <UserProfile className="w-full h-full" src={avatar} />
-  <UserProfile className="w-full h-full" src={avatar} />
-  <UserProfile className="w-full h-full" src={avatar} />
+  {members.map((member) => (
+    <UserProfile key={member.id} className="w-full h-full" src={member.avatar} />
+  ))}
 </div>
 
   );

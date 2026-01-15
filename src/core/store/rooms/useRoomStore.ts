@@ -19,7 +19,7 @@ type RoomStore = {
     }) => Promise<void>
 
     sendMessage: (text: string, user: string) => void
-    
+
 }
 
 
@@ -36,7 +36,7 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
             onMessage: (msg) => set((s) => ({
                 messages: [...s.messages, msg],
             })),
-            onPresence: (users) => set({presenceUsers: users}),
+            onPresence: (users) => set({ presenceUsers: users }),
         })
         set({
             roomId,
@@ -46,17 +46,26 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
         })
     },
     sendMessage: (text, user) => {
-        const { channel } = get()
-        if(!channel) return
+        const channel = get().channel;
+        if (!channel) return;
 
+        const message = {
+            text,
+            user,
+            createdAt: Date.now(),
+        };
+
+
+        set((state) => ({
+            messages: [...state.messages, message],
+        }));
+
+        // Broadcast for others
         channel.send({
             type: "broadcast",
             event: "message",
-            payload: {
-                text,
-                user
-            }
-        })
-    }
+            payload: message,
+        });
+    },
 
 }))

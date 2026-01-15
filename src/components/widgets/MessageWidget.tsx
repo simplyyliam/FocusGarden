@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/auth";
 import { useRoomStore } from "@/core";
 import { useState, useRef, useEffect } from "react";
@@ -8,11 +7,6 @@ export const MessageWidget = () => {
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
-
-
-  const { messages, sendMessage } = useRoomStore()
-  const { session } = useAuth()
-  const [value, setValue] = useState('')
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -31,9 +25,7 @@ export const MessageWidget = () => {
       });
     };
 
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
+    const handleMouseUp = () => setIsDragging(false);
 
     if (isDragging) {
       window.addEventListener("mousemove", handleMouseMove);
@@ -46,42 +38,55 @@ export const MessageWidget = () => {
     };
   }, [isDragging]);
 
+  const { messages, sendMessage } = useRoomStore();
+  const { session } = useAuth();
+  const [value, setValue] = useState("");
 
   return (
     <div
       ref={dragRef}
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-      }}
+      style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
       className="flex flex-col bg-white w-220 h-150 rounded-3xl absolute right-0 bottom-0 overflow-hidden"
     >
+      {/* Drag Handle */}
       <div
         onMouseDown={handleMouseDown}
         className={`flex items-center bg-accent w-full h-10 rounded-t-3xl ${
           isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
-      ></div>
-      <div className="h-full p-4">
-        {messages.map((m) => (
+      />
+
+      {/* Messages */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        {messages.map((m, i) => (
           <div
-            className={`flex w-full h-fit ${
+            key={i}
+            className={`flex w-full ${
               m.user === session?.user.email
                 ? "justify-end"
                 : "justify-start"
             }`}
           >
-            <p>{m.message}</p>
+            <p className="max-w-[75%] rounded-xl px-3 py-2 bg-black/5">
+              {m.text}
+            </p>
           </div>
         ))}
       </div>
-      <div className="h-fit p-4">
-        <form onSubmit={(e) => {
-          e.preventDefault()
-          sendMessage(value, session!.user.email!)
-          setValue("")
-        }}>
+
+      {/* Input */}
+      <div className="p-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!value.trim() || !session) return;
+
+            sendMessage(value, session.user.email!);
+            setValue("");
+          }}
+        >
           <input
-            className="h-10 w-full outline-none"
+            className="h-10 w-full outline-none bg-transparent"
             type="text"
             value={value}
             onChange={(e) => setValue(e.target.value)}
