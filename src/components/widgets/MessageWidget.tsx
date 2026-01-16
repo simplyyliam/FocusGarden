@@ -1,6 +1,7 @@
 import { useAuth } from "@/auth";
 import { useRoomStore } from "@/core";
 import { useState, useRef, useEffect } from "react";
+import UserProfile from "../UserProfile";
 
 export const MessageWidget = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -9,6 +10,10 @@ export const MessageWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
+
+  // const users = useRoomStore((s) => s.presenceUsers);
+  const { presenceUsers, roomId } = useRoomStore()
+  const users = presenceUsers
 
   // Detect mobile screen size
   useEffect(() => {
@@ -90,9 +95,10 @@ export const MessageWidget = () => {
       }
       className={`
         flex flex-col bg-white rounded-3xl overflow-hidden shadow-xl
-        ${isMobile
-          ? "fixed inset-x-2 bottom-2 top-auto h-[60vh] z-50"
-          : "w-220 h-150 absolute right-0 bottom-0"
+        ${
+          isMobile
+            ? "fixed inset-x-2 bottom-2 top-auto h-[60vh] z-50"
+            : "w-220 h-150 absolute right-0 bottom-0"
         }
       `}
     >
@@ -103,12 +109,9 @@ export const MessageWidget = () => {
           isMobile ? "" : isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
       >
-        <span className="text-white text-sm font-medium">Chat</span>
+        <span className="text-sm font-medium">Message in {roomId}</span>
         {isMobile && (
-          <button
-            onClick={() => setIsOpen(false)}
-            className="text-white"
-          >
+          <button onClick={() => setIsOpen(false)} className="text-white">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -133,20 +136,25 @@ export const MessageWidget = () => {
           <div
             key={i}
             className={`flex w-full ${
-              m.user === session?.user.email
-                ? "justify-end"
-                : "justify-start"
+              m.user === session?.user.email ? "justify-end" : "justify-start"
             }`}
           >
-            <p
-              className={`max-w-[75%] rounded-xl px-3 py-2 ${
-                m.user === session?.user.email
-                  ? "bg-accent"
-                  : "bg-black/5"
+            <div
+              className={`flex items-center gap-2 ${
+                m.user === session?.user.email ? "flex-row-reverse " : ""
               }`}
             >
-              {m.text}
-            </p>
+              <UserProfile
+                src={users.find((user) => user.email === m.user)?.avatar ?? ""}
+              />
+              <p
+                className={`max-w-[75%] rounded-xl px-3 py-2 ${
+                  m.user === session?.user.email ? "bg-accent" : "bg-accent "
+                }`}
+              >
+                {m.text}
+              </p>
+            </div>
           </div>
         ))}
       </div>
