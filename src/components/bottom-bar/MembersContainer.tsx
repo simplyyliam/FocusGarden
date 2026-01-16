@@ -1,13 +1,12 @@
-
 import { useRoomStore } from "@/core";
 import UserProfile from "../UserProfile";
 
 export default function MembersContainer() {
-  const users = useRoomStore((s) => s.presenceUsers)
+  const users = useRoomStore((s) => s.presenceUsers);
 
   return (
-<div
-  className="
+    <div
+      className="
     grid grid-cols-2
     w-16 h-16
     gap-0.5
@@ -17,11 +16,14 @@ export default function MembersContainer() {
     border border-white/15
     backdrop-blur-md
   "
->
-  {users.map((member) => (
-    <UserProfile key={member.id} className="w-full h-full" src={member.avatar} />
-  ))}
-</div>
-
+    >
+      {users.map((member) => (
+        <UserProfile
+          className="w-fit h-fit"
+          key={member.id}
+          src={member.avatar || ""}
+        />
+      ))}
+    </div>
   );
 }

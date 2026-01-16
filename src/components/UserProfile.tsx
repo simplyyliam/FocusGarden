@@ -7,7 +7,7 @@ interface Props {
 }
 
 
-export const UserProfile = ({src, className, onClick}: Props) => {
+const UserProfile = ({src, className, onClick}: Props) => {
   return (
     <Avatar onClick={onClick} className={className}>
       {src ? (
