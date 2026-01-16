@@ -1,7 +1,6 @@
 import { supabase } from "@/lib";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
-
 let activeChannel: RealtimeChannel | null = null
 
 type PresenceUser = {
@@ -42,7 +41,7 @@ export async function JoinRoom({
     const channel = supabase.channel(`room:${roomId}`, {
         config: {
             broadcast: {
-                self: true,  // Sender receives their own messages
+                self: true,
             },
             presence: {
                 key: user.id
@@ -60,7 +59,14 @@ export async function JoinRoom({
         channel.on("presence", { event: "sync" }, () => {
             const state = channel.presenceState()
             const users = Object.values(state).flat() as unknown as PresenceUser[]
-            onPresence(users)
+            
+            // Deduplicate by user id
+            const uniqueUsers = users.filter(
+                (user, index, self) =>
+                    index === self.findIndex((u) => u.id === user.id)
+            )
+            
+            onPresence(uniqueUsers)
         })
     }
     
@@ -77,5 +83,4 @@ export async function JoinRoom({
 
     activeChannel = channel
     return channel
-
 }
