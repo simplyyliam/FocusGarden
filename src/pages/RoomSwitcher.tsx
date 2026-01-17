@@ -40,7 +40,7 @@ export default function RoomSwitcher() {
   };
 
   return (
-    <div className="flex items-center justify-center w-screen h-screen bg-[url('bg-1.png')] bg-cover">
+    <div className="flex items-center justify-center w-screen h-screen bg-[url('/bg-1.png')] bg-cover">
       <div className="flex flex-col gap-6">
         <h2 className="text-2xl font-semibold text-white">Choose a Room</h2>
 
