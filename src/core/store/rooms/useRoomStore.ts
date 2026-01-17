@@ -16,63 +16,70 @@ type PresenceUser = {
 }
 
 type TimerState = {
-    startedAt: number | null  // Unix timestamp when timer started
-    pausedAt: number | null   // Unix timestamp when paused (null if running)
-    duration: number          // Total duration in seconds
+    startedAt: number | null
+    pausedAt: number | null
+    duration: number
 }
+
+type RoomMode = "group" | "individual"
 
 type RoomStore = {
     roomId: string | null
+    roomMode: RoomMode
     channel: RealtimeChannel | null
     messages: Message[]
     presenceUsers: PresenceUser[]
     timerState: TimerState
+    localTimerState: TimerState // For individual mode
 
     joinRoom: (args: {
         roomId: string
         user: { id: string; email?: string; avatar?: string }
+        mode?: RoomMode
     }) => Promise<void>
 
     leaveRoom: () => void
     sendMessage: (text: string, user: string) => void
 
-    // Timer actions (broadcast to all users)
+    // Timer actions
     startTimer: () => void
     pauseTimer: () => void
     resumeTimer: () => void
     resetTimer: () => void
 
-    // Computed remaining time
     getRemainingTime: () => number
 }
 
 const TIMER_DURATION = 1500; // 25 minutes
 
+const createDefaultTimerState = (): TimerState => ({
+    startedAt: null,
+    pausedAt: null,
+    duration: TIMER_DURATION,
+});
+
 export const useRoomStore = create<RoomStore>((set, get) => ({
     roomId: localStorage.getItem("roomId"),
+    roomMode: (localStorage.getItem("roomMode") as RoomMode) || "individual",
     channel: null,
     messages: [],
     presenceUsers: [],
-    timerState: {
-        startedAt: null,
-        pausedAt: null,
-        duration: TIMER_DURATION,
-    },
+    timerState: createDefaultTimerState(),
+    localTimerState: createDefaultTimerState(),
 
-    joinRoom: async ({ roomId, user }) => {
+    joinRoom: async ({ roomId, user, mode = "individual" }) => {
         const channel = await JoinRoomRealtime({
             roomId,
             user,
             onMessage: (msg) => {
-                // Handle chat messages
                 if (msg.type === "chat") {
                     set((s) => {
                         if (s.messages.some((m) => m.id === msg.id)) return s;
                         return { messages: [...s.messages, msg as Message] };
                     });
                 }
-                // Handle timer sync
-                if (msg.type === "timer_sync") {
+                // Only sync timer in group mode
+                if (msg.type === "timer_sync" && get().roomMode === "group") {
                     set({ timerState: msg.timerState as TimerState });
                 }
             },
@@ -80,17 +87,21 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
         });
 
         localStorage.setItem("roomId", roomId);
+        localStorage.setItem("roomMode", mode);
         set({
             roomId,
+            roomMode: mode,
             channel,
             messages: [],
             presenceUsers: [],
-            timerState: { startedAt: null, pausedAt: null, duration: TIMER_DURATION },
+            timerState: createDefaultTimerState(),
+            localTimerState: createDefaultTimerState(),
         });
     },
 
     leaveRoom: () => {
         localStorage.removeItem("roomId");
+        localStorage.removeItem("roomMode");
         set({
             roomId: null,
             channel: null,
@@ -115,71 +126,81 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
     },
 
     startTimer: () => {
-        const channel = get().channel;
-        if (!channel) return;
-
+        const { channel, roomMode } = get();
         const timerState: TimerState = {
             startedAt: Date.now(),
             pausedAt: null,
             duration: TIMER_DURATION,
         };
 
-        set({ timerState });
-        channel.send({ type: "broadcast", event: "message", payload: { type: "timer_sync", timerState } });
+        if (roomMode === "group") {
+            set({ timerState });
+            channel?.send({ type: "broadcast", event: "message", payload: { type: "timer_sync", timerState } });
+        } else {
+            set({ localTimerState: timerState });
+        }
     },
 
     pauseTimer: () => {
-        const channel = get().channel;
-        const { timerState } = get();
-        if (!channel || !timerState.startedAt) return;
+        const { channel, roomMode, timerState, localTimerState } = get();
+        const currentState = roomMode === "group" ? timerState : localTimerState;
+        if (!currentState.startedAt) return;
 
         const newState: TimerState = {
-            ...timerState,
+            ...currentState,
             pausedAt: Date.now(),
         };
 
-        set({ timerState: newState });
-        channel.send({ type: "broadcast", event: "message", payload: { type: "timer_sync", timerState: newState } });
+        if (roomMode === "group") {
+            set({ timerState: newState });
+            channel?.send({ type: "broadcast", event: "message", payload: { type: "timer_sync", timerState: newState } });
+        } else {
+            set({ localTimerState: newState });
+        }
     },
 
     resumeTimer: () => {
-        const channel = get().channel;
-        const { timerState } = get();
-        if (!channel || !timerState.pausedAt) return;
+        const { channel, roomMode, timerState, localTimerState } = get();
+        const currentState = roomMode === "group" ? timerState : localTimerState;
+        if (!currentState.pausedAt) return;
 
-        const pausedDuration = timerState.pausedAt - (timerState.startedAt ?? 0);
+        const pausedDuration = currentState.pausedAt - (currentState.startedAt ?? 0);
         const newState: TimerState = {
             startedAt: Date.now() - pausedDuration,
             pausedAt: null,
-            duration: timerState.duration,
+            duration: currentState.duration,
         };
 
-        set({ timerState: newState });
-        channel.send({ type: "broadcast", event: "message", payload: { type: "timer_sync", timerState: newState } });
+        if (roomMode === "group") {
+            set({ timerState: newState });
+            channel?.send({ type: "broadcast", event: "message", payload: { type: "timer_sync", timerState: newState } });
+        } else {
+            set({ localTimerState: newState });
+        }
     },
 
     resetTimer: () => {
-        const channel = get().channel;
-        if (!channel) return;
+        const { channel, roomMode } = get();
+        const timerState = createDefaultTimerState();
 
-        const timerState: TimerState = {
-            startedAt: null,
-            pausedAt: null,
-            duration: TIMER_DURATION,
-        };
-
-        set({ timerState });
-        channel.send({ type: "broadcast", event: "message", payload: { type: "timer_sync", timerState } });
+        if (roomMode === "group") {
+            set({ timerState });
+            channel?.send({ type: "broadcast", event: "message", payload: { type: "timer_sync", timerState } });
+        } else {
+            set({ localTimerState: timerState });
+        }
     },
 
     getRemainingTime: () => {
-        const { timerState } = get();
-        if (!timerState.startedAt) return timerState.duration;
+        const { roomMode, timerState, localTimerState } = get();
+        const currentState = roomMode === "group" ? timerState : localTimerState;
 
-        const elapsed = timerState.pausedAt
-            ? timerState.pausedAt - timerState.startedAt
-            : Date.now() - timerState.startedAt;
+        if (!currentState.startedAt) return currentState.duration;
 
-        return Math.max(0, timerState.duration - Math.floor(elapsed / 1000));
+        const elapsed = currentState.pausedAt
+            ? currentState.pausedAt - currentState.startedAt
+            : Date.now() - currentState.startedAt;
+
+        return Math.max(0, currentState.duration - Math.floor(elapsed / 1000));
     },
 }));
