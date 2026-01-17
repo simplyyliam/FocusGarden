@@ -23,7 +23,7 @@ export default function RoomSwitcher() {
   const { session } = useAuth();
   const navigate = useNavigate();
 
-  const [selectedMode] = useState<RoomMode>("individual");
+  const [selectedMode, setSelectedMode] = useState<RoomMode>("individual");
 
   const handleJoinRoom = async (roomId: string) => {
     if (!session) return;
@@ -45,7 +45,7 @@ export default function RoomSwitcher() {
         <h2 className="text-2xl font-semibold text-white">Choose a Room</h2>
 
         {/* Mode Toggle */}
-        {/* <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <span className="text-sm text-white/60">Timer Mode</span>
           <div className="flex items-center gap-1 p-1 bg-white/10 rounded-lg w-fit">
             <button
@@ -76,7 +76,7 @@ export default function RoomSwitcher() {
               ? "Timer synced with everyone in the room"
               : "Control your own timer independently"}
           </p>
-        </div> */}
+        </div>
 
         {/* Room List */}
         <div className="flex gap-4">
