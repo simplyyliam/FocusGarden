@@ -19,40 +19,30 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "../ui/context-menu";
+import { useRoomStore } from "@/core";
 
-type Todo = { id: number; text: string; completed: boolean };
+
+// type Todo = { id: number; text: string; completed: boolean };
 
 export default function TodoWidget() {
   const [showInput, setShowInput] = useState(false);
-  const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState("");
-  const [newlyAddedId, setNewlyAddedId] = useState<number | null>(null);
-  const [pendingTodo, setPendingTodo] = useState<Todo | null>(null);
+  const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
+  // const [todos, setTodos] = useState<Todo[]>([]);
+  const { todos, addTodo, deleteTodo, toggleTodo } = useRoomStore()
 
   const todoRef = useRef<HTMLButtonElement | null>(null);
 
-  function addTodo(e: FormEvent) {
-    e.preventDefault();
-    if (!input.trim()) return;
 
-    const newId = Date.now();
-    // Store the todo temporarily, don't add it yet
-    setPendingTodo({ id: newId, text: input, completed: false });
-    setNewlyAddedId(newId);
-    setInput("");
-    setShowInput(false); // This triggers the input exit animation
-  }
+  function handleAddTodo(e: FormEvent) {
+    e.preventDefault()
 
-  function handleInputExitComplete() {
-    // After input exits, add the pending todo
-    if (pendingTodo) {
-      setTodos((prev) => [...prev, pendingTodo]);
-      setPendingTodo(null);
-    }
-  }
+    if(!input.trim()) return
 
-  function deleteTodo(id: number) {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
+    addTodo(input)
+    setInput("")
+    setShowInput(false)
+
   }
 
   return (
@@ -100,15 +90,7 @@ export default function TodoWidget() {
                         <Checkbox
                           id={t.id.toString()}
                           checked={t.completed}
-                          onCheckedChange={() =>
-                            setTodos((prev) =>
-                              prev.map((todo) =>
-                                todo.id === t.id
-                                  ? { ...todo, completed: !t.completed }
-                                  : todo
-                              )
-                            )
-                          }
+                          onCheckedChange={() => toggleTodo(t.id)}
                         />
                         <label htmlFor={t.id.toString()}>{t.text}</label>
                       </motion.div>
@@ -126,8 +108,8 @@ export default function TodoWidget() {
               );
             })}
           </AnimatePresence>
-          <AnimatePresence mode="wait" onExitComplete={handleInputExitComplete}>
-            {todos.length === 0 && !showInput && !pendingTodo && (
+          <AnimatePresence mode="wait">
+            {todos.length === 0 && !showInput && (
               <motion.div
                 key="empty"
                 initial={{ opacity: 0 }}
@@ -146,7 +128,7 @@ export default function TodoWidget() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
               >
-                <form onSubmit={addTodo} className="flex p-2.5 w-full">
+                <form onSubmit={handleAddTodo} className="flex p-2.5 w-full">
                   <input
                     className="w-full p-2.5"
                     type="text"

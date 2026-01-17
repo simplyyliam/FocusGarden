@@ -33,7 +33,7 @@ type RoomStore = {
     //Todo actions
     addTodo: (text: string) => void
     toggleTodo: (id: string) => void
-    deletedTodo: (id: string) => void
+    deleteTodo: (id: string) => void
     assignTodo: (todoId: string, user: string) => void
     unassignTodo: (todoId: string, user: string) => void
 }
@@ -290,7 +290,7 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
         })
 
     },
-    deletedTodo: (id) => {
+    deleteTodo: (id) => {
         const { channel } = get()
         if (!channel) return
 
