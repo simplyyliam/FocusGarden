@@ -1,46 +1,52 @@
-import { useTimer } from "@/core";
-import { useEffect } from "react";
+import { useRoomStore } from "@/core";
+import { useEffect, useState } from "react";
 
 export default function TimerContainer() {
-  const tick = useTimer((s) => s.tick);
-  const timer = useTimer((s) => s.timer);
-  const pause = useTimer((s) => s.pause);
-  const resume = useTimer((s) => s.resume);
-  const paused = useTimer((s) => s.isPaused);
+  const getRemainingTime = useRoomStore((s) => s.getRemainingTime);
+  const timerState = useRoomStore((s) => s.timerState);
+  const startTimer = useRoomStore((s) => s.startTimer);
+  const pauseTimer = useRoomStore((s) => s.pauseTimer);
+  const resumeTimer = useRoomStore((s) => s.resumeTimer);
 
-  const mins = Math.floor(timer / 60);
-  const secs = (timer % 60).toString().padStart(2, "0");
-  const formatted = `${mins}:${secs}`;
+  const [displayTime, setDisplayTime] = useState(getRemainingTime());
 
+  const isPaused = timerState.pausedAt !== null;
+  // const isRunning = timerState.startedAt !== null && !isPaused;
+
+  // Update display every second
   useEffect(() => {
-    const interval = setInterval(tick, 1000);
+    const interval = setInterval(() => {
+      setDisplayTime(getRemainingTime());
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [tick]);
+  }, [getRemainingTime]);
 
+  // Keyboard controls
   useEffect(() => {
-    const handlePasue = (e: KeyboardEvent) => {
-      if (!paused && e.key === " ") {
-        pause();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === " ") {
+        e.preventDefault();
+        if (!timerState.startedAt) {
+          startTimer();
+        } else if (isPaused) {
+          resumeTimer();
+        } else {
+          pauseTimer();
+        }
       }
     };
 
-    const handleResume = (e: KeyboardEvent) => {
-      if (paused && e.key === " ") {
-        resume();
-      }
-    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [timerState.startedAt, isPaused, startTimer, pauseTimer, resumeTimer]);
 
-    window.addEventListener("keydown", handlePasue);
-    window.addEventListener("keydown", handleResume);
-    return () => {
-      window.removeEventListener("keydown", handlePasue);
-      window.removeEventListener("keydown", handleResume);
-    };
-  }, [pause, resume, paused]);
+  const mins = Math.floor(displayTime / 60);
+  const secs = (displayTime % 60).toString().padStart(2, "0");
+
   return (
     <div className="flex flex-col items-center justify-center text-9xl text-white font-semibold">
-      {formatted}
+      {mins}:{secs}
     </div>
   );
 }

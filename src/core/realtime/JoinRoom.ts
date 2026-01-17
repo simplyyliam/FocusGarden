@@ -41,7 +41,7 @@ export async function JoinRoom({
     const channel = supabase.channel(`room:${roomId}`, {
         config: {
             broadcast: {
-                self: true,
+                self: true, //Allows the sender to see there own broadcasts (messages sent, there presenceState, etc).
             },
             presence: {
                 key: user.id
@@ -52,6 +52,7 @@ export async function JoinRoom({
     if(onMessage) {
         channel.on("broadcast", { event: "message" }, (payload) => {
             onMessage(payload.payload)
+            // console.log(payload.payload)
         })
     }
 
@@ -59,7 +60,7 @@ export async function JoinRoom({
         channel.on("presence", { event: "sync" }, () => {
             const state = channel.presenceState()
             const users = Object.values(state).flat() as unknown as PresenceUser[]
-            
+            // console.log("Presence State:", {state})
             // Deduplicate by user id
             const uniqueUsers = users.filter(
                 (user, index, self) =>
