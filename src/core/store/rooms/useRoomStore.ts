@@ -1,27 +1,7 @@
 import { JoinRoom as JoinRoomRealtime } from "@/core/realtime/JoinRoom";
+import type { Message, PresenceUser, RoomMode, TimerState, Todo } from "@/types";
 import { type RealtimeChannel } from "@supabase/supabase-js";
 import { create } from "zustand";
-
-type Message = {
-    id: string
-    text: string
-    user: string
-    createdAt: number
-}
-
-type PresenceUser = {
-    id: string
-    email?: string
-    avatar?: string
-}
-
-type TimerState = {
-    startedAt: number | null
-    pausedAt: number | null
-    duration: number
-}
-
-type RoomMode = "group" | "individual"
 
 type RoomStore = {
     roomId: string | null
@@ -31,6 +11,7 @@ type RoomStore = {
     presenceUsers: PresenceUser[]
     timerState: TimerState
     localTimerState: TimerState // For individual mode
+    todos: Todo[]
 
     joinRoom: (args: {
         roomId: string
@@ -48,6 +29,13 @@ type RoomStore = {
     resetTimer: () => void
 
     getRemainingTime: () => number
+
+    //Todo actions
+    addTodo: (text: string) => void
+    toggleTodo: (id: string) => void
+    deletedTodo: (id: string) => void
+    assignTodo: (todoId: string, user: string) => void
+    unassignTodo: (todoId: string, user: string) => void
 }
 
 const TIMER_DURATION = 1500; // 25 minutes
@@ -66,6 +54,7 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
     presenceUsers: [],
     timerState: createDefaultTimerState(),
     localTimerState: createDefaultTimerState(),
+    todos: [],
 
     joinRoom: async ({ roomId, user, mode = "individual" }) => {
         const channel = await JoinRoomRealtime({
@@ -82,6 +71,50 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
                 if (msg.type === "timer_sync" && get().roomMode === "group") {
                     set({ timerState: msg.timerState as TimerState });
                 }
+
+                if (msg.type === "todo_sync") {
+                    const { action, todo, todoId, userId } = msg
+
+                    switch (action) {
+                        case "add":
+                            set((s) => ({
+                                todos: [...s.todos, todo as Todo]
+                            }))
+                            break;
+                        case "toggle":
+                            set((s) => ({
+                                todos: s.todos.map((todo) =>
+                                    todo.id === todoId ? { ...todo, completed: !todo.completed } : todo
+                                )
+                            }))
+                            break;
+                        case "delete":
+                            set((s) => ({
+                                todos: s.todos.filter((todo) => todo.id !== todoId)
+                            }))
+                            break;
+
+                        case "assign":
+                            set((s) => ({
+                                todos: s.todos.map((todo) =>
+                                    todo.id === todoId
+                                        ? { ...todo, assignedTo: [...todo.assignedTo] }
+                                        : todo
+                                )
+                            }));
+                            break;
+
+                        case "unassign":
+                            set((s) => ({
+                                todos: s.todos.map((todo) =>
+                                    todo.id === todoId
+                                        ? { ...todo, assignedTo: todo.assignedTo.filter((id) => id !== userId) }
+                                        : todo
+                                )
+                            }))
+                            break;
+                    }
+                }
             },
             onPresence: (users) => set({ presenceUsers: users }),
         });
@@ -94,6 +127,7 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
             channel,
             messages: [],
             presenceUsers: [],
+            todos: [],
             timerState: createDefaultTimerState(),
             localTimerState: createDefaultTimerState(),
         });
@@ -203,4 +237,124 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
 
         return Math.max(0, currentState.duration - Math.floor(elapsed / 1000));
     },
+
+    addTodo: (text) => {
+        const { channel, roomId } = get()
+        if (!channel || !roomId) return
+
+        const currentUser = get().presenceUsers.find((user) => user.id)
+        if (!currentUser) return
+
+        const newTodo: Todo = {
+            id: crypto.randomUUID(),
+            text,
+            completed: false,
+            createdBy: currentUser.id,
+            createdAt: Date.now(),
+            roomId,
+            assignedTo: [currentUser.id],
+        }
+
+        set((s) => ({
+            todos: [...s.todos, newTodo]
+        }))
+
+        channel.send({
+            type: "broadcast",
+            event: "message",
+            payload: {
+                type: "todo_sync",
+                action: "add",
+                todo: newTodo
+            }
+        })
+    },
+    toggleTodo: (id) => {
+        const { channel } = get()
+        if (!channel) return
+
+        set((s) => ({
+            todos: s.todos.map((todo) =>
+                todo.id === id ? { ...todo, completed: !todo.completed } : todo
+            )
+        }))
+
+        channel.send({
+            type: "broadcast",
+            event: "message",
+            payload: {
+                type: "todo_sync",
+                action: "toggle",
+                todo: id
+            }
+        })
+
+    },
+    deletedTodo: (id) => {
+        const { channel } = get()
+        if (!channel) return
+
+        set((s) => ({
+            todos: s.todos.filter((todo) => todo.id !== id)
+        }))
+
+        channel.send({
+            type: "broadcast",
+            event: "message",
+            payload: {
+                type: "todo_sync",
+                action: "delete",
+                todo: id
+            }
+        })
+    },
+    assignTodo: (todoId, userId) => {
+        const { channel } = get()
+        if (!channel) return
+
+        const todo = get().todos.find((todo) => todo.id === todoId)
+        if (!todo || todo.assignedTo.includes(userId)) return
+
+        set((s) => ({
+            todos: s.todos.map((todo) =>
+                todo.id === todoId
+                    ? { ...todo, assignedTo: [...todo.assignedTo, userId] }
+                    : todo
+            )
+        }))
+        channel.send({
+            type: "broadcast",
+            event: "message",
+            payload: {
+                type: "todo_sync",
+                action: "assign",
+                todoId,
+                userId
+            }
+        })
+    },
+    unassignTodo: (todoId, userId) => {
+        const { channel } = get()
+        if (!channel) return
+
+        set((s) => ({
+            todos: s.todos.map((todo) =>
+                todo.id === todoId
+                    ? { ...todo, assignedTo: todo.assignedTo.filter((id) => id !== userId) }
+                    : todo
+            )
+        }))
+
+        channel.send({
+            type: "broadcast",
+            event: "message",
+            payload: {
+                type: "todo_sync",
+                action: "unassign",
+                todoId,
+                userId
+            }
+        })
+    },
+
 }));
