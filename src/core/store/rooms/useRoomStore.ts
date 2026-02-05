@@ -31,7 +31,7 @@ type RoomStore = {
     getRemainingTime: () => number
 
     //Todo actions
-    addTodo: (text: string) => void
+    addTodo: (text: string) => string | null
     toggleTodo: (id: string) => void
     deleteTodo: (id: string) => void
     assignTodo: (todoId: string, user: string) => void
@@ -77,9 +77,13 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
 
                     switch (action) {
                         case "add":
-                            set((s) => ({
-                                todos: [...s.todos, todo as Todo]
-                            }))
+                            set((s) => {
+                                const newTodo = todo as Todo;
+                                if (s.todos.some((t) => t.id === newTodo.id)) return s
+                                return {
+                                    todos: [...s.todos, newTodo]
+                                }
+                            })
                             break;
                         case "toggle":
                             set((s) => ({
@@ -240,10 +244,10 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
 
     addTodo: (text) => {
         const { channel, roomId } = get()
-        if (!channel || !roomId) return
+        if (!channel || !roomId) return null
 
         const currentUser = get().presenceUsers.find((user) => user.id)
-        if (!currentUser) return
+        if (!currentUser) return null
 
         const newTodo: Todo = {
             id: crypto.randomUUID(),
@@ -268,6 +272,7 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
                 todo: newTodo
             }
         })
+        return newTodo.id
     },
     toggleTodo: (id) => {
         const { channel } = get()

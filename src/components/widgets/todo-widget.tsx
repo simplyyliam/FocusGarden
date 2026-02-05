@@ -22,13 +22,10 @@ import {
 import { useRoomStore } from "@/core";
 
 
-// type Todo = { id: number; text: string; completed: boolean };
-
 export default function TodoWidget() {
   const [showInput, setShowInput] = useState(false);
   const [input, setInput] = useState("");
   const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
-  // const [todos, setTodos] = useState<Todo[]>([]);
   const { todos, addTodo, deleteTodo, toggleTodo } = useRoomStore()
 
   const todoRef = useRef<HTMLButtonElement | null>(null);
@@ -39,7 +36,8 @@ export default function TodoWidget() {
 
     if(!input.trim()) return
 
-    addTodo(input)
+    const id = addTodo(input)
+    if(id) setNewlyAddedId(id)
     setInput("")
     setShowInput(false)
 
@@ -61,30 +59,32 @@ export default function TodoWidget() {
           </CardAction>
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-2">
-          <AnimatePresence>
+        <CardContent className="flex flex-col gap-2 relative">
+          <AnimatePresence initial={false} mode="popLayout">
             {todos.map((t) => {
               const isNew = t.id === newlyAddedId;
               return (
-                <ContextMenu key={t.id}>
+                <motion.div
+                 layout
+                 key={t.id}
+                 initial={isNew ? { opacity: 0, scale: 0.8, y: 10 } : { opacity: 0, scale: 0.8 }}
+                 animate={{ opacity: 1, scale: 1, y: 0 }}
+                 exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                 onAnimationComplete={() => {
+                   if (isNew) setNewlyAddedId(null);
+                 }}
+                >
+                <ContextMenu>
                   <ContextMenuTrigger asChild>
                     <button
                       ref={todoRef}
-                      key={t.id}
                       className={`flex p-2.5 w-full cursor-pointer rounded-xl hover:bg-accent transition-colors ${
                         t.completed
                           ? "bg-blue-200 hover:bg-blue-300 text-blue-400 line-through"
                           : ""
                       }`}
                     >
-                      <motion.div
-                        initial={isNew ? { opacity: 0, scale: 0 } : false}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        onAnimationComplete={() => {
-                          if (isNew) setNewlyAddedId(null);
-                        }}
-                        key={t.id}
+                      <div
                         className="flex items-center gap-2.5"
                       >
                         <Checkbox
@@ -92,8 +92,8 @@ export default function TodoWidget() {
                           checked={t.completed}
                           onCheckedChange={() => toggleTodo(t.id)}
                         />
-                        <label htmlFor={t.id.toString()}>{t.text}</label>
-                      </motion.div>
+                        <label className="cursor-pointer" htmlFor={t.id.toString()}>{t.text}</label>
+                      </div>
                     </button>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
@@ -105,12 +105,14 @@ export default function TodoWidget() {
                     <ContextMenuItem>Subscription</ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>
+                </motion.div>
               );
             })}
           </AnimatePresence>
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
             {todos.length === 0 && !showInput && (
               <motion.div
+                layout
                 key="empty"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -123,14 +125,15 @@ export default function TodoWidget() {
 
             {showInput && (
               <motion.div
+                layout
                 key="input"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
               >
                 <form onSubmit={handleAddTodo} className="flex p-2.5 w-full">
                   <input
-                    className="w-full p-2.5"
+                    className="w-full p-2.5 bg-secondary/50 rounded-md focus:outline-none"
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
